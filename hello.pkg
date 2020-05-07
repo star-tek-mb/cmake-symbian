@@ -1,0 +1,13 @@
+&EN
+
+#{"hello"},(0xe8abe52f),1,0,0
+
+%{"noobtek"}
+
+:"noobtek"
+
+[0x101F7961], 0, 0, 0, {"S60ProductID"}
+
+;Files to install
+"hello.exe" -"!:\sys\bin\hello.exe"
+"hello_reg.rsc" -"!:\private\10003a3f\import\apps\hello_reg.rsc"

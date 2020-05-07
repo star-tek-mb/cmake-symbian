@@ -1,0 +1,69 @@
+set(EPOCROOT $ENV{EPOCROOT})
+
+execute_process(COMMAND "${CMAKE_C_COMPILER}" -print-libgcc-file-name OUTPUT_VARIABLE LIBGCC_PATH)
+get_filename_component(STD_LIB_PATH "${LIBGCC_PATH}" PATH)
+
+set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_C_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> -Map <TARGET>.map <LINK_LIBRARIES>")
+set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> -Map <TARGET>.map <LINK_LIBRARIES>")
+
+# define includes
+add_definitions(
+    -D__SYMBIAN32__ -D__S60_32__ -D__S60_3X__ -D__SERIES60_3X__ -D__GCCE__ -D__EPOC32__ -D__MARM__ -D__EABI__ -D__MARM_ARMV5__ -D__EXE__ -D_WCHAR_T_DECLARED -D__SUPPORT_CPP_EXCEPTIONS__
+    -DNDEBUG -D_UNICODE
+)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -include ${EPOCROOT}/epoc32/include/variant/symbian_os_v9.3.hrh -include ${EPOCROOT}/epoc32/include/gcce/gcce.h")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include ${EPOCROOT}/epoc32/include/variant/symbian_os_v9.3.hrh -include ${EPOCROOT}/epoc32/include/gcce/gcce.h")
+
+include_directories(${EPOCROOT}/epoc32/include)
+include_directories(${EPOCROOT}/epoc32/include/stdapis)
+include_directories(${EPOCROOT}/epoc32/include/stdapis/sys)
+include_directories(${EPOCROOT}/epoc32/include/stdapis/stlport)
+include_directories(${EPOCROOT}/epoc32/include/stdapis/stlport/stl)
+include_directories(${EPOCROOT}/epoc32/include/variant)
+include_directories(${STD_LIB_PATH}/include)
+
+# link directories
+set(EPOC_SYSTEMLIB ${EPOCROOT}/epoc32/release/armv5/lib)
+if(CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
+    set(EPOC_USERLIB ${EPOCROOT}/epoc32/release/armv5/udeb)
+else(CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
+    set(EPOC_USERLIB ${EPOCROOT}/epoc32/release/armv5/urel)
+endif(CMAKE_BUILD_TYPE STREQUAL Debug OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
+
+link_libraries(
+    ${EPOC_USERLIB}/eexe.lib
+    --start-group
+    ${EPOC_USERLIB}/usrt2_2.lib
+	${EPOC_USERLIB}/libcrt0.lib
+    --end-group
+    ${EPOC_SYSTEMLIB}/libstdcpp.dso
+    ${EPOC_SYSTEMLIB}/libc.dso
+    ${EPOC_SYSTEMLIB}/libpthread.dso
+    ${EPOC_SYSTEMLIB}/euser.dso
+    ${EPOC_SYSTEMLIB}/dfpaeabi.dso
+    ${EPOC_SYSTEMLIB}/dfprvct2_2.dso
+    ${EPOC_SYSTEMLIB}/drtaeabi.dso
+    ${EPOC_SYSTEMLIB}/scppnwdl.dso
+    ${EPOC_SYSTEMLIB}/drtrvct2_2.dso
+    supc++
+    gcc
+)
+
+set(CMAKE_EXE_LINKER_FLAGS "-shared --no-undefined -Ttext 0x8000 -Tdata 0x400000 --entry _E32Startup -u _E32Startup -L\"${STD_LIB_PATH}/../../../../arm-none-symbianelf/lib\" -L\"${STD_LIB_PATH}\" ${CMAKE_EXE_LINKER_FLAGS}")
+
+function(elf2e32 ENAME UID3)
+    add_custom_command(
+			TARGET ${ENAME}
+			POST_BUILD
+			COMMAND elf2e32 --elfinput=${ENAME} --uid1=0x1000007a
+                    --uid2=0x100039ce‬ --uid3=${UID3} --sid=${UID3} --output=${ENAME}.exe 
+                    --libpath="${EPOC_SYSTEMLIB}" --targettype=EXE
+                    --dso="${ENAME}.dso" --linkas="${ENAME}.exe")
+endfunction()
+
+function(makesis PKG)
+    add_custom_command(
+            TARGET ${PKG}
+			POST_BUILD
+			COMMAND makesis ${PKG}.pkg)
+endfunction()

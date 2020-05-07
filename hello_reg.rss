@@ -1,0 +1,13 @@
+#include <appinfo.rh>
+
+UID2 KUidAppRegistrationResourceFile
+UID3 0xe8abe52f
+
+RESOURCE APP_REGISTRATION_INFO
+  {
+  app_file="hello";
+
+  embeddability=KAppNotEmbeddable;
+  newfile=KAppDoesNotSupportNewFile;
+  }
+
